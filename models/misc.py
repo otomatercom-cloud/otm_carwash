@@ -6,10 +6,12 @@ PAY_METHODS = [("cash", "Cash"), ("upi", "UPI"), ("card", "Card"), ("online", "O
 EVENTS = [
     ("booking_confirmed", "Booking Confirmed"),
     ("vehicle_arrived", "Vehicle Arrived"),
+    ("vehicle_assigned", "Vehicle Assigned to Bay"),
     ("wash_started", "Wash Started"),
     ("vehicle_ready", "Vehicle Ready"),
     ("payment_pending", "Payment Pending"),
     ("payment_received", "Payment Received"),
+    ("delivered", "Vehicle Delivered"),
     ("package_expiring", "Package Expiring"),
     ("service_reminder", "Service Reminder"),
 ]
@@ -81,30 +83,6 @@ class OtmCwAudit(models.Model):
             "res_model": record._name, "res_id": record.id,
             "ref": record.display_name, "action": action, "detail": detail, "actor": actor,
         })
-
-
-class OtmCwNotification(models.Model):
-    """Provider-agnostic notification outbox. A WhatsApp/SMS/email provider can
-    be plugged into _send() later without touching business code."""
-    _name = "otm.cw.notification"
-    _description = "Car Wash Notification Outbox"
-    _order = "id desc"
-
-    event = fields.Selection(EVENTS, required=True, index=True)
-    partner_id = fields.Many2one("res.partner", index=True)
-    channel = fields.Selection([("whatsapp", "WhatsApp"), ("sms", "SMS"), ("email", "Email")], default="whatsapp")
-    message = fields.Char()
-    state = fields.Selection([("pending", "Pending"), ("sent", "Sent"), ("failed", "Failed")], default="pending")
-
-    @api.model
-    def notify(self, event, partner, message=""):
-        if not partner:
-            return False
-        return self.sudo().create({"event": event, "partner_id": partner.id, "message": message})
-
-    def _send(self):
-        """Provider hook. No provider is configured: records stay 'pending'."""
-        return False
 
 
 class OtmCwFeedback(models.Model):

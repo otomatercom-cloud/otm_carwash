@@ -209,8 +209,10 @@
                 <field name="event"/>
                 <field name="partner_id"/>
                 <field name="channel"/>
+                <field name="recipient"/>
                 <field name="message"/>
-                <field name="state"/>
+                <field name="state" decoration-success="state == 'sent'" decoration-danger="state == 'failed'" decoration-muted="state == 'skipped'"/>
+                <field name="error" optional="show"/>
             </list>
         </field>
     </record>

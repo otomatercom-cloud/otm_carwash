@@ -2,6 +2,7 @@ from . import master
 from . import partner
 from . import package
 from . import misc
+from . import notify
 from . import job
 from . import booking
 from . import api

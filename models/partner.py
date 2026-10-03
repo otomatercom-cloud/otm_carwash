@@ -27,6 +27,13 @@ class ResPartner(models.Model):
     otm_cw_mobile = fields.Char(string="Car Wash Mobile")
     otm_cw_mobile_key = fields.Char(compute="_compute_otm_cw_mobile_key", store=True, index=True)
     otm_cw_whatsapp = fields.Char(string="Car Wash WhatsApp")
+    otm_cw_notify_opt_in = fields.Boolean(string="Accepts Wash Updates", default=True,
+                                          help="Customer agreed to receive vehicle status messages.")
+    otm_cw_notify_channel = fields.Selection(
+        [("auto", "Auto (first available)"), ("whatsapp", "WhatsApp"), ("telegram", "Telegram"), ("sms", "SMS"),
+         ("email", "Email"), ("all", "All channels"), ("none", "None")], string="Preferred Update Channel", default="auto")
+    otm_cw_telegram_chat_id = fields.Char(string="Telegram Chat ID", copy=False)
+    otm_cw_telegram_code = fields.Char(string="Telegram Link Code", copy=False)
     otm_cw_vehicle_ids = fields.One2many("otm.cw.vehicle", "partner_id", string="Registered Vehicles")
 
     @api.depends("otm_cw_mobile")

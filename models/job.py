@@ -201,7 +201,7 @@ class OtmCwJob(models.Model):
         if subscription:
             job._consume_package(subscription)
         self.env["otm.cw.audit"].log(job, "Vehicle checked in", "Token %s, priority %s" % (job.token, priority))
-        self.env["otm.cw.notification"].notify("vehicle_arrived", partner, _("Vehicle %s checked in") % vehicle.reg_no)
+        self.env["otm.cw.notification"].notify("vehicle_arrived", partner, _("Vehicle %s checked in") % vehicle.reg_no, job=job)
         return job
 
     def _consume_package(self, sub):
@@ -281,6 +281,7 @@ class OtmCwJob(models.Model):
             "assigned_staff_ids": [(6, 0, staff.ids)],
         })
         bay.write({"state": "reserved", "current_job_id": self.id})
+        self.env["otm.cw.notification"].notify("vehicle_assigned", self.partner_id, "", job=self)
         if staff:
             self.env["otm.cw.audit"].log(self, "Staff assigned", ", ".join(staff.mapped("name")))
 
@@ -315,7 +316,7 @@ class OtmCwJob(models.Model):
             "start_dt": now, "last_resume_dt": now, "actual_staff_ids": [(6, 0, staff.ids)],
             "end_dt": False, "qc_passed": False})
         self.bay_id.write({"state": "busy"})
-        self.env["otm.cw.notification"].notify("wash_started", self.partner_id, _("Wash started for %s") % self.vehicle_id.reg_no)
+        self.env["otm.cw.notification"].notify("wash_started", self.partner_id, "", job=self)
 
     def _bank_time(self):
         self.ensure_one()
@@ -363,15 +364,16 @@ class OtmCwJob(models.Model):
         if not self.qc_passed:
             raise UserError(_("Quality check must pass before marking ready."))
         self._go("ready", "Vehicle ready", "")
-        self.env["otm.cw.notification"].notify("vehicle_ready", self.partner_id, _("%s is ready") % self.vehicle_id.reg_no)
+        self.env["otm.cw.notification"].notify("vehicle_ready", self.partner_id, "", job=self)
         if self.balance > 0:
-            self.env["otm.cw.notification"].notify("payment_pending", self.partner_id, _("Balance %.2f pending") % self.balance)
+            self.env["otm.cw.notification"].notify("payment_pending", self.partner_id, "", job=self)
 
     def action_deliver(self):
         self.ensure_one()
         if self.payment_state != "paid":
             raise UserError(_("Payment is pending. Collect the balance before delivery."))
         self._go("completed", "Vehicle delivered", "", {"delivered_dt": fields.Datetime.now()})
+        self.env["otm.cw.notification"].notify("delivered", self.partner_id, "", job=self)
 
     def action_cancel(self, reason=""):
         self.ensure_one()

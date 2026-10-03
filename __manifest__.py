@@ -2,7 +2,7 @@
 {
     "name": "Otomater Car Wash Management",
     "summary": "Car wash operations: bays, queue, jobs, pricing matrix, packages, payments, staff performance",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.1.0",
     "category": "Services",
     "author": "Otomater",
     "website": "https://otomater.com",

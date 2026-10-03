@@ -2,6 +2,7 @@
 """Aggregated server-side API used by the Next.js server through Odoo's JSON-2 endpoint
 (POST /json/2/otm.cw.api/<method>). Every public method is @api.model and takes kwargs only.
 Each call returns everything one screen needs, so Next.js never chains requests."""
+import secrets
 from datetime import date, datetime, time, timedelta
 
 import pytz
@@ -10,6 +11,8 @@ from odoo import api, fields, models, _
 from odoo.exceptions import UserError
 
 from .job import ACTIVE_STATES, PARAM_DEFAULTS, fmt_local, get_param, local_today, local_tz
+from .misc import EVENTS
+from .notify import CHANNELS, EVENT_DEFAULTS, _digits
 from .partner import mobile_key
 
 RESOURCES = {
@@ -46,10 +49,24 @@ RESOURCES = {
     "subscriptions": dict(model="otm.cw.subscription", order="id desc", search=["name"], readonly=True,
                           fields=["name", "partner_id", "package_id", "start_date", "expiry_date", "amount"],
                           scope="partner_id"),
+    "notifications": dict(model="otm.cw.notification", order="id desc", search=["message", "recipient", "partner_id.name"],
+                          readonly=True, date_field="create_date",
+                          fields=["event", "partner_id", "job_id", "channel", "recipient", "message", "state", "error",
+                                  "attempts", "sent_dt", "create_date"]),
     "audit": dict(model="otm.cw.audit", order="id desc", search=["ref", "action", "actor"], readonly=True,
                   fields=["ref", "res_model", "res_id", "action", "detail", "actor", "dt"], date_field="dt"),
 }
 PAGE_MAX = 100
+NOTIFY_P = "otm_cw.notify."
+NOTIFY_PLAIN = ("wa_enabled", "wa_phone_id", "wa_lang", "tg_enabled", "tg_bot", "sms_enabled", "sms_sid", "sms_from",
+                "email_enabled", "shop_name")
+NOTIFY_SECRET = ("wa_token", "tg_token", "sms_token")
+
+
+def _np(env, key, default=""):
+    v = env["ir.config_parameter"].sudo().get_param(NOTIFY_P + key)
+    return v if v not in (None, False) else default
+
 
 
 def ser(value):
@@ -630,8 +647,10 @@ class OtmCwApi(models.AbstractModel):
 
     @api.model
     def walkin(self, name=None, mobile=None, reg_no=None, vehicle_type_id=None, service_ids=None, brand="", model="",
-               color="", priority="normal", subscription_id=None, notes=""):
+               color="", priority="normal", subscription_id=None, notes="", notify_opt_in=None):
         partner = self._get_or_create_customer(name, mobile or "")
+        if notify_opt_in is not None and partner.otm_cw_notify_opt_in != bool(notify_opt_in):
+            partner.sudo().otm_cw_notify_opt_in = bool(notify_opt_in)
         vehicle = self._get_or_create_vehicle(partner, reg_no, vehicle_type_id, brand, model, color)
         services = self.env["otm.cw.service"].browse(to_ids(service_ids)).exists()
         sub = self.env["otm.cw.subscription"].browse(to_int(subscription_id)).exists() if subscription_id else None
@@ -640,6 +659,141 @@ class OtmCwApi(models.AbstractModel):
         job = self.env["otm.cw.job"].create_job(partner, vehicle, services, priority, None, sub, notes)
         self.env["otm.cw.job"].dispatch()
         return self.job_detail(job_id=job.id)
+
+    # ------------------------------------------------------- notifications
+    @api.model
+    def notify_settings_get(self):
+        env = self.env
+        out = {k: _np(env, k) for k in NOTIFY_PLAIN}
+        out["country_code"] = _np(env, "wa_country", "91")
+        for k in NOTIFY_SECRET:
+            out[k + "_set"] = bool(_np(env, k))            # secrets are write-only: never returned
+        out["events"] = {e: {"enabled": env["otm.cw.notification"].event_enabled(e),
+                             "template": _np(env, "tpl_" + e) or EVENT_DEFAULTS[e][1],
+                             "wa_template": _np(env, "wa_tpl_" + e)} for e in EVENT_DEFAULTS}
+        out["event_labels"] = dict(EVENTS)
+        out["active_channels"] = env["otm.cw.notification"]._enabled_channels()
+        return out
+
+    @api.model
+    def notify_settings_set(self, values=None):
+        ICP, v = self.env["ir.config_parameter"].sudo(), values or {}
+        for k in NOTIFY_PLAIN + ("wa_country",):
+            if k in v and k != "tg_bot":   # bot username is learned from Telegram, not typed in
+                ICP.set_param(NOTIFY_P + k, str(v[k] or "").strip()[:200])
+        for k in NOTIFY_SECRET:
+            if v.get(k):                                    # empty = keep existing
+                ICP.set_param(NOTIFY_P + k, str(v[k]).strip()[:500])
+            if v.get(k + "_clear"):
+                ICP.set_param(NOTIFY_P + k, "")
+        for e, cfg in (v.get("events") or {}).items():
+            if e not in EVENT_DEFAULTS:
+                continue
+            if "enabled" in cfg:
+                ICP.set_param(NOTIFY_P + "ev_" + e, "1" if cfg["enabled"] else "0")
+            if "template" in cfg:
+                ICP.set_param(NOTIFY_P + "tpl_" + e, str(cfg["template"] or "").strip()[:500])
+            if "wa_template" in cfg:
+                ICP.set_param(NOTIFY_P + "wa_tpl_" + e, str(cfg["wa_template"] or "").strip()[:100])
+        if v.get("tg_token"):
+            self._telegram_refresh_bot()
+        return self.notify_settings_get()
+
+    def _telegram_refresh_bot(self):
+        Note = self.env["otm.cw.notification"]
+        try:
+            r = Note._http("GET", "https://api.telegram.org/bot%s/getMe" % _np(self.env, "tg_token"))
+            self.env["ir.config_parameter"].sudo().set_param(NOTIFY_P + "tg_bot", r.json().get("result", {}).get("username", ""))
+        except Exception:  # noqa: BLE001 - invalid token is reported by the test button
+            self.env["ir.config_parameter"].sudo().set_param(NOTIFY_P + "tg_bot", "")
+
+    @api.model
+    def notify_test(self, channel=None, to=None):
+        Note = self.env["otm.cw.notification"].sudo()
+        if channel not in dict(CHANNELS) or not (to or "").strip():
+            raise UserError(_("Choose a channel and a recipient."))
+        text = _("Test message from %s. Notifications are working.") % (_np(self.env, "shop_name") or "Car Wash")
+        to = to.strip()
+        try:
+            if channel == "whatsapp":
+                Note._send_whatsapp(_digits(to, _np(self.env, "wa_country", "91")), text)
+            elif channel == "telegram":
+                Note._send_telegram(to, text)
+            elif channel == "sms":
+                Note._send_sms(to if to.startswith("+") else "+" + _digits(to, _np(self.env, "wa_country", "91")), text)
+            else:
+                Note._send_email(to, text)
+        except UserError as exc:
+            raise UserError(Note._clean_error(exc)) from exc
+        return {"ok": True}
+
+    @api.model
+    def notify_job(self, job_id=None, event="vehicle_ready", channels=None):
+        job = self.env["otm.cw.job"].browse(to_int(job_id)).exists()
+        if not job or event not in ("vehicle_assigned", "wash_started", "vehicle_ready", "delivered"):
+            raise UserError(_("Cannot send this notification."))
+        rows = self.env["otm.cw.notification"].notify(event, job.partner_id, "", job=job, force=True, channels=channels or None)
+        return {"queued": len(rows.filtered(lambda r: r.state == "pending")),
+                "skipped": [r.error for r in rows if r.state == "skipped"]}
+
+    @api.model
+    def notify_flush(self):
+        return self.env["otm.cw.notification"].process_queue()
+
+    @api.model
+    def notify_resend(self, notification_id=None):
+        self.env["otm.cw.notification"].browse(to_int(notification_id)).exists().action_retry()
+        return self.env["otm.cw.notification"].process_queue()
+
+    @api.model
+    def telegram_link_code(self, partner_id=None):
+        p = self.env["res.partner"].browse(to_int(partner_id)).exists()
+        if not p:
+            raise UserError(_("Customer not found."))
+        bot = _np(self.env, "tg_bot")
+        if not bot or _np(self.env, "tg_enabled") != "1":
+            raise UserError(_("Telegram updates are not enabled yet."))
+        code = secrets.token_urlsafe(8).replace("-", "x").replace("_", "y")
+        p.sudo().write({"otm_cw_telegram_code": code})
+        return {"code": code, "bot": bot, "link": "https://t.me/%s?start=%s" % (bot, code),
+                "linked": bool(p.otm_cw_telegram_chat_id)}
+
+    @api.model
+    def telegram_link(self, code=None, chat_id=None):
+        code = (code or "").strip()
+        if not code or not chat_id:
+            return {"ok": False}
+        p = self.env["res.partner"].sudo().search([("otm_cw_telegram_code", "=", code)], limit=1)
+        if not p:
+            return {"ok": False}
+        p.write({"otm_cw_telegram_chat_id": str(chat_id), "otm_cw_telegram_code": False, "otm_cw_notify_opt_in": True})
+        try:
+            self.env["otm.cw.notification"]._send_telegram(str(chat_id), _("Hi %s, Telegram is now connected. We'll message you about your vehicle here.") % p.name)
+        except Exception:  # noqa: BLE001
+            pass
+        return {"ok": True}
+
+    @api.model
+    def telegram_unlink(self, partner_id=None):
+        self.env["res.partner"].sudo().browse(to_int(partner_id)).write({"otm_cw_telegram_chat_id": False})
+        return True
+
+    @api.model
+    def telegram_set_webhook(self, url=None, secret=None):
+        Note = self.env["otm.cw.notification"]
+        if not _np(self.env, "tg_token"):
+            raise UserError(_("Save the Telegram bot token first."))
+        try:
+            Note._http("POST", "https://api.telegram.org/bot%s/setWebhook" % _np(self.env, "tg_token"),
+                       json={"url": url, "secret_token": secret, "allowed_updates": ["message"]})
+        except UserError as exc:
+            raise UserError(Note._clean_error(exc)) from exc
+        return {"ok": True}
+
+    @api.model
+    def job_notifications(self, job_id=None):
+        return [rec_to_dict(n, ["event", "channel", "recipient", "state", "error", "sent_dt", "create_date"])
+                for n in self.env["otm.cw.notification"].search([("job_id", "=", to_int(job_id))], limit=20)]
 
     # ---------------------------------------------------------------- jobs
     @api.model
@@ -916,6 +1070,10 @@ class OtmCwApi(models.AbstractModel):
         today = local_today(self.env)
         return {
             "name": p.name, "mobile": p.otm_cw_mobile or "",
+            "notify": {"opt_in": p.otm_cw_notify_opt_in, "channel": p.otm_cw_notify_channel or "auto",
+                       "telegram_linked": bool(p.otm_cw_telegram_chat_id),
+                       "telegram_enabled": _np(self.env, "tg_enabled") == "1" and bool(_np(self.env, "tg_bot")),
+                       "channels": self.env["otm.cw.notification"]._enabled_channels()},
             "active_jobs": cards,
             "vehicles": [rec_to_dict(v, ["reg_no", "vehicle_type_id", "brand", "model", "color"]) for v in p.otm_cw_vehicle_ids],
             "upcoming": [rec_to_dict(b, RESOURCES["bookings"]["fields"]) for b in self.env["otm.cw.booking"].search(
@@ -933,7 +1091,8 @@ class OtmCwApi(models.AbstractModel):
         if not p:
             raise UserError(_("Customer not found."))
         v = values or {}
-        p.sudo().write({k: v[k] for k in ("name", "otm_cw_mobile", "otm_cw_whatsapp", "email", "street") if k in v})
+        p.sudo().write({k: v[k] for k in ("name", "otm_cw_mobile", "otm_cw_whatsapp", "email", "street",
+                                          "otm_cw_notify_opt_in", "otm_cw_notify_channel") if k in v})
         return True
 
     @api.model
