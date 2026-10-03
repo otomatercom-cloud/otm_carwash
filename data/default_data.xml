@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <!-- Master defaults (real configuration, NOT demo data). Edit freely. -->
+    <record id="vt_hatchback" model="otm.cw.vehicle.type"><field name="name">Hatchback</field><field name="code">HATCH</field><field name="sequence">10</field></record>
+    <record id="vt_sedan" model="otm.cw.vehicle.type"><field name="name">Sedan</field><field name="code">SEDAN</field><field name="sequence">20</field></record>
+    <record id="vt_suv" model="otm.cw.vehicle.type"><field name="name">SUV</field><field name="code">SUV</field><field name="sequence">30</field></record>
+    <record id="vt_luxury" model="otm.cw.vehicle.type"><field name="name">Luxury</field><field name="code">LUX</field><field name="sequence">40</field></record>
+    <record id="vt_van" model="otm.cw.vehicle.type"><field name="name">Van</field><field name="code">VAN</field><field name="sequence">50</field></record>
+    <record id="vt_other" model="otm.cw.vehicle.type"><field name="name">Other</field><field name="code">OTHER</field><field name="sequence">60</field></record>
+
+    <record id="sv_full" model="otm.cw.service"><field name="name">Full Body Wash</field><field name="code">FULL</field><field name="duration">30</field><field name="sequence">10</field></record>
+    <record id="sv_exterior" model="otm.cw.service"><field name="name">Exterior Wash</field><field name="code">EXT</field><field name="duration">20</field><field name="sequence">20</field></record>
+    <record id="sv_under" model="otm.cw.service"><field name="name">Under Body Wash</field><field name="code">UNDER</field><field name="duration">20</field><field name="sequence">30</field></record>
+    <record id="sv_interior" model="otm.cw.service"><field name="name">Interior Cleaning</field><field name="code">INT</field><field name="duration">30</field><field name="sequence">40</field></record>
+    <record id="sv_vacuum" model="otm.cw.service"><field name="name">Vacuum</field><field name="code">VAC</field><field name="duration">10</field><field name="sequence">50</field></record>
+    <record id="sv_foam" model="otm.cw.service"><field name="name">Foam Wash</field><field name="code">FOAM</field><field name="duration">25</field><field name="sequence">60</field></record>
+    <record id="sv_wax" model="otm.cw.service"><field name="name">Waxing</field><field name="code">WAX</field><field name="duration">30</field><field name="sequence">70</field></record>
+    <record id="sv_polish" model="otm.cw.service"><field name="name">Polishing</field><field name="code">POLISH</field><field name="duration">60</field><field name="sequence">80</field></record>
+    <record id="sv_detail" model="otm.cw.service"><field name="name">Detailing</field><field name="code">DETAIL</field><field name="duration">120</field><field name="sequence">90</field></record>
+    <record id="sv_ceramic" model="otm.cw.service"><field name="name">Ceramic Coating</field><field name="code">CERAMIC</field><field name="duration">240</field><field name="sequence">100</field></record>
+    <record id="sv_engine" model="otm.cw.service"><field name="name">Engine Cleaning</field><field name="code">ENGINE</field><field name="duration">30</field><field name="sequence">110</field></record>
+
+    <record id="bay_1" model="otm.cw.bay"><field name="name">Bay 01</field><field name="number">1</field></record>
+    <record id="bay_2" model="otm.cw.bay"><field name="name">Bay 02</field><field name="number">2</field></record>
+    <record id="bay_3" model="otm.cw.bay"><field name="name">Bay 03</field><field name="number">3</field></record>
+    <record id="bay_4" model="otm.cw.bay"><field name="name">Bay 04</field><field name="number">4</field></record>
+    <record id="bay_5" model="otm.cw.bay"><field name="name">Bay 05</field><field name="number">5</field></record>
+</odoo>

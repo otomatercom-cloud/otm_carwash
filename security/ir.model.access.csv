@@ -1,0 +1,45 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+acl_vtype_mgr,vtype manager,model_otm_cw_vehicle_type,group_cw_manager,1,1,1,1
+acl_vtype_user,vtype user,model_otm_cw_vehicle_type,base.group_user,1,0,0,0
+acl_service_mgr,service manager,model_otm_cw_service,group_cw_manager,1,1,1,1
+acl_service_user,service user,model_otm_cw_service,base.group_user,1,0,0,0
+acl_pricing_mgr,pricing manager,model_otm_cw_pricing,group_cw_manager,1,1,1,1
+acl_pricing_user,pricing user,model_otm_cw_pricing,base.group_user,1,0,0,0
+acl_vehicle_mgr,vehicle manager,model_otm_cw_vehicle,group_cw_manager,1,1,1,1
+acl_vehicle_rec,vehicle reception,model_otm_cw_vehicle,group_cw_reception,1,1,1,0
+acl_vehicle_op,vehicle operator,model_otm_cw_vehicle,group_cw_operator,1,0,0,0
+acl_bay_mgr,bay manager,model_otm_cw_bay,group_cw_manager,1,1,1,1
+acl_bay_user,bay user,model_otm_cw_bay,base.group_user,1,1,0,0
+acl_job_mgr,job manager,model_otm_cw_job,group_cw_manager,1,1,1,1
+acl_job_rec,job reception,model_otm_cw_job,group_cw_reception,1,1,1,0
+acl_job_op,job operator,model_otm_cw_job,group_cw_operator,1,1,0,0
+acl_jobline_mgr,jobline manager,model_otm_cw_job_line,group_cw_manager,1,1,1,1
+acl_jobline_rec,jobline reception,model_otm_cw_job_line,group_cw_reception,1,1,1,0
+acl_jobline_op,jobline operator,model_otm_cw_job_line,group_cw_operator,1,0,0,0
+acl_booking_mgr,booking manager,model_otm_cw_booking,group_cw_manager,1,1,1,1
+acl_booking_rec,booking reception,model_otm_cw_booking,group_cw_reception,1,1,1,0
+acl_bookline_mgr,bookline manager,model_otm_cw_booking_line,group_cw_manager,1,1,1,1
+acl_bookline_rec,bookline reception,model_otm_cw_booking_line,group_cw_reception,1,1,1,0
+acl_payment_mgr,payment manager,model_otm_cw_payment,group_cw_manager,1,1,1,1
+acl_payment_rec,payment reception,model_otm_cw_payment,group_cw_reception,1,0,1,0
+acl_inspection_mgr,inspection manager,model_otm_cw_inspection,group_cw_manager,1,1,1,1
+acl_inspection_rec,inspection reception,model_otm_cw_inspection,group_cw_reception,1,1,1,0
+acl_inspection_op,inspection operator,model_otm_cw_inspection,group_cw_operator,1,1,1,0
+acl_audit_mgr,audit manager,model_otm_cw_audit,group_cw_manager,1,0,0,0
+acl_audit_user,audit user,model_otm_cw_audit,base.group_user,0,0,1,0
+acl_notif_mgr,notification manager,model_otm_cw_notification,group_cw_manager,1,1,1,1
+acl_notif_user,notification user,model_otm_cw_notification,base.group_user,0,0,1,0
+acl_feedback_mgr,feedback manager,model_otm_cw_feedback,group_cw_manager,1,1,1,1
+acl_package_mgr,package manager,model_otm_cw_package,group_cw_manager,1,1,1,1
+acl_package_user,package user,model_otm_cw_package,base.group_user,1,0,0,0
+acl_packline_mgr,packline manager,model_otm_cw_package_line,group_cw_manager,1,1,1,1
+acl_packline_user,packline user,model_otm_cw_package_line,base.group_user,1,0,0,0
+acl_sub_mgr,subscription manager,model_otm_cw_subscription,group_cw_manager,1,1,1,1
+acl_sub_rec,subscription reception,model_otm_cw_subscription,group_cw_reception,1,1,1,0
+acl_subline_mgr,subline manager,model_otm_cw_subscription_line,group_cw_manager,1,1,1,1
+acl_subline_rec,subline reception,model_otm_cw_subscription_line,group_cw_reception,1,1,1,0
+acl_usage_mgr,usage manager,model_otm_cw_package_usage,group_cw_manager,1,1,1,1
+acl_usage_rec,usage reception,model_otm_cw_package_usage,group_cw_reception,1,0,1,0
+acl_hr_emp_op,hr employee read operator,hr.model_hr_employee,group_cw_operator,1,0,0,0
+acl_hr_emp_rec,hr employee read reception,hr.model_hr_employee,group_cw_reception,1,0,0,0
+acl_hr_emp_mgr,hr employee read manager,hr.model_hr_employee,group_cw_manager,1,0,0,0

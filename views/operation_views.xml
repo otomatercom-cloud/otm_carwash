@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Jobs (read mostly; workflow runs from the Next.js app) -->
+    <record id="view_cw_job_list" model="ir.ui.view">
+        <field name="name">otm.cw.job.list</field>
+        <field name="model">otm.cw.job</field>
+        <field name="arch" type="xml">
+            <list create="0">
+                <field name="name"/>
+                <field name="token"/>
+                <field name="vehicle_id"/>
+                <field name="partner_id"/>
+                <field name="state"/>
+                <field name="bay_id"/>
+                <field name="arrival_dt"/>
+                <field name="wait_minutes"/>
+                <field name="amount_total"/>
+                <field name="payment_state"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_cw_job_form" model="ir.ui.view">
+        <field name="name">otm.cw.job.form</field>
+        <field name="model">otm.cw.job</field>
+        <field name="arch" type="xml">
+            <form create="0">
+                <header>
+                    <field name="state" widget="statusbar" statusbar_visible="queued,assigned,washing,quality_check,ready,completed"/>
+                </header>
+                <sheet>
+                    <group name="main">
+                        <group name="who">
+                            <field name="name"/>
+                            <field name="partner_id" readonly="1"/>
+                            <field name="vehicle_id" readonly="1"/>
+                            <field name="vehicle_type_id" readonly="1"/>
+                            <field name="priority" readonly="1"/>
+                            <field name="bay_id" readonly="1"/>
+                            <field name="assign_reason" readonly="1"/>
+                        </group>
+                        <group name="times">
+                            <field name="arrival_dt" readonly="1"/>
+                            <field name="assigned_dt" readonly="1"/>
+                            <field name="start_dt" readonly="1"/>
+                            <field name="end_dt" readonly="1"/>
+                            <field name="wait_minutes" readonly="1"/>
+                            <field name="work_seconds" readonly="1"/>
+                            <field name="estimated_minutes" readonly="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page name="page_services" string="Services">
+                            <field name="line_ids" readonly="1">
+                                <list>
+                                    <field name="service_id"/>
+                                    <field name="duration"/>
+                                    <field name="price"/>
+                                </list>
+                            </field>
+                            <group name="totals">
+                                <field name="subtotal"/>
+                                <field name="discount_amount"/>
+                                <field name="amount_total"/>
+                                <field name="paid_amount"/>
+                                <field name="balance"/>
+                                <field name="payment_state"/>
+                            </group>
+                        </page>
+                        <page name="page_staff" string="Staff">
+                            <group name="staff">
+                                <field name="assigned_staff_ids" widget="many2many_tags" readonly="1"/>
+                                <field name="actual_staff_ids" widget="many2many_tags" readonly="1"/>
+                            </group>
+                        </page>
+                        <page name="page_payments" string="Payments">
+                            <field name="payment_ids" readonly="1">
+                                <list>
+                                    <field name="dt"/>
+                                    <field name="kind"/>
+                                    <field name="method"/>
+                                    <field name="amount"/>
+                                    <field name="reference"/>
+                                    <field name="received_by"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="view_cw_job_search" model="ir.ui.view">
+        <field name="name">otm.cw.job.search</field>
+        <field name="model">otm.cw.job</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="vehicle_id"/>
+                <field name="partner_id"/>
+                <filter name="active_jobs" string="Active"
+                        domain="[('state', 'in', ['queued', 'assigned', 'washing', 'paused', 'quality_check', 'ready'])]"/>
+                <separator/>
+                <group>
+                    <filter name="group_state" string="Status" context="{'group_by': 'state'}"/>
+                    <filter name="group_bay" string="Bay" context="{'group_by': 'bay_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="action_cw_job" model="ir.actions.act_window">
+        <field name="name">Job Cards</field>
+        <field name="res_model">otm.cw.job</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- Bookings -->
+    <record id="view_cw_booking_list" model="ir.ui.view">
+        <field name="name">otm.cw.booking.list</field>
+        <field name="model">otm.cw.booking</field>
+        <field name="arch" type="xml">
+            <list create="0">
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="vehicle_id"/>
+                <field name="slot_dt"/>
+                <field name="state"/>
+                <field name="amount_total"/>
+                <field name="source"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_cw_booking" model="ir.actions.act_window">
+        <field name="name">Bookings</field>
+        <field name="res_model">otm.cw.booking</field>
+        <field name="view_mode">list</field>
+    </record>
+
+    <!-- Payments -->
+    <record id="view_cw_payment_list" model="ir.ui.view">
+        <field name="name">otm.cw.payment.list</field>
+        <field name="model">otm.cw.payment</field>
+        <field name="arch" type="xml">
+            <list create="0" edit="0">
+                <field name="dt"/>
+                <field name="job_id"/>
+                <field name="partner_id"/>
+                <field name="kind"/>
+                <field name="method"/>
+                <field name="amount" sum="Total"/>
+                <field name="reference"/>
+                <field name="received_by"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_cw_payment" model="ir.actions.act_window">
+        <field name="name">Payments</field>
+        <field name="res_model">otm.cw.payment</field>
+        <field name="view_mode">list</field>
+    </record>
+
+    <!-- Subscriptions -->
+    <record id="view_cw_subscription_list" model="ir.ui.view">
+        <field name="name">otm.cw.subscription.list</field>
+        <field name="model">otm.cw.subscription</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="package_id"/>
+                <field name="start_date"/>
+                <field name="expiry_date"/>
+                <field name="amount"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_cw_subscription" model="ir.actions.act_window">
+        <field name="name">Package Subscriptions</field>
+        <field name="res_model">otm.cw.subscription</field>
+        <field name="view_mode">list</field>
+    </record>
+
+    <!-- Audit -->
+    <record id="view_cw_audit_list" model="ir.ui.view">
+        <field name="name">otm.cw.audit.list</field>
+        <field name="model">otm.cw.audit</field>
+        <field name="arch" type="xml">
+            <list create="0" edit="0" delete="0">
+                <field name="dt"/>
+                <field name="ref"/>
+                <field name="action"/>
+                <field name="detail"/>
+                <field name="actor"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_cw_audit" model="ir.actions.act_window">
+        <field name="name">Audit Trail</field>
+        <field name="res_model">otm.cw.audit</field>
+        <field name="view_mode">list</field>
+    </record>
+
+    <!-- Notification outbox -->
+    <record id="view_cw_notification_list" model="ir.ui.view">
+        <field name="name">otm.cw.notification.list</field>
+        <field name="model">otm.cw.notification</field>
+        <field name="arch" type="xml">
+            <list create="0">
+                <field name="create_date"/>
+                <field name="event"/>
+                <field name="partner_id"/>
+                <field name="channel"/>
+                <field name="message"/>
+                <field name="state"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_cw_notification" model="ir.actions.act_window">
+        <field name="name">Notification Outbox</field>
+        <field name="res_model">otm.cw.notification</field>
+        <field name="view_mode">list</field>
+    </record>
+</odoo>

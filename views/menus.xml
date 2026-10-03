@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_cw_root" name="Car Wash" sequence="60"/>
+
+    <menuitem id="menu_cw_ops" name="Operations" parent="menu_cw_root" sequence="10"/>
+    <menuitem id="menu_cw_jobs" name="Job Cards" parent="menu_cw_ops" action="action_cw_job" sequence="10"/>
+    <menuitem id="menu_cw_bookings" name="Bookings" parent="menu_cw_ops" action="action_cw_booking" sequence="20"/>
+    <menuitem id="menu_cw_payments" name="Payments" parent="menu_cw_ops" action="action_cw_payment" sequence="30"/>
+    <menuitem id="menu_cw_subscriptions" name="Package Subscriptions" parent="menu_cw_ops" action="action_cw_subscription" sequence="40"/>
+
+    <menuitem id="menu_cw_config" name="Configuration" parent="menu_cw_root" sequence="20"/>
+    <menuitem id="menu_cw_vtypes" name="Vehicle Types" parent="menu_cw_config" action="action_cw_vehicle_type" sequence="10"/>
+    <menuitem id="menu_cw_services" name="Services" parent="menu_cw_config" action="action_cw_service" sequence="20"/>
+    <menuitem id="menu_cw_pricing" name="Pricing Matrix" parent="menu_cw_config" action="action_cw_pricing" sequence="30"/>
+    <menuitem id="menu_cw_bays" name="Bays" parent="menu_cw_config" action="action_cw_bay" sequence="40"/>
+    <menuitem id="menu_cw_packages" name="Packages" parent="menu_cw_config" action="action_cw_package" sequence="50"/>
+    <menuitem id="menu_cw_vehicles" name="Vehicles" parent="menu_cw_config" action="action_cw_vehicle" sequence="60"/>
+
+    <menuitem id="menu_cw_logs" name="Logs" parent="menu_cw_root" sequence="30"/>
+    <menuitem id="menu_cw_audit" name="Audit Trail" parent="menu_cw_logs" action="action_cw_audit" sequence="10"/>
+    <menuitem id="menu_cw_notifications" name="Notification Outbox" parent="menu_cw_logs" action="action_cw_notification" sequence="20"/>
+</odoo>

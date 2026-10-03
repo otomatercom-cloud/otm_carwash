@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="seq_cw_job" model="ir.sequence">
+        <field name="name">Car Wash Job</field>
+        <field name="code">otm.cw.job</field>
+        <field name="prefix">CW-</field>
+        <field name="padding">6</field>
+        <field name="company_id" eval="False"/>
+    </record>
+    <record id="seq_cw_booking" model="ir.sequence">
+        <field name="name">Car Wash Booking</field>
+        <field name="code">otm.cw.booking</field>
+        <field name="prefix">BK-</field>
+        <field name="padding">6</field>
+        <field name="company_id" eval="False"/>
+    </record>
+    <record id="seq_cw_subscription" model="ir.sequence">
+        <field name="name">Car Wash Package Subscription</field>
+        <field name="code">otm.cw.subscription</field>
+        <field name="prefix">PK-</field>
+        <field name="padding">5</field>
+        <field name="company_id" eval="False"/>
+    </record>
+</odoo>

@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Vehicle types -->
+    <record id="view_cw_vehicle_type_list" model="ir.ui.view">
+        <field name="name">otm.cw.vehicle.type.list</field>
+        <field name="model">otm.cw.vehicle.type</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="description"/>
+                <field name="active" optional="show"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_cw_vehicle_type" model="ir.actions.act_window">
+        <field name="name">Vehicle Types</field>
+        <field name="res_model">otm.cw.vehicle.type</field>
+        <field name="view_mode">list</field>
+    </record>
+
+    <!-- Services -->
+    <record id="view_cw_service_list" model="ir.ui.view">
+        <field name="name">otm.cw.service.list</field>
+        <field name="model">otm.cw.service</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="duration"/>
+                <field name="description"/>
+                <field name="active" optional="show"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_cw_service" model="ir.actions.act_window">
+        <field name="name">Services</field>
+        <field name="res_model">otm.cw.service</field>
+        <field name="view_mode">list</field>
+    </record>
+
+    <!-- Pricing -->
+    <record id="view_cw_pricing_list" model="ir.ui.view">
+        <field name="name">otm.cw.pricing.list</field>
+        <field name="model">otm.cw.pricing</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="service_id"/>
+                <field name="vehicle_type_id"/>
+                <field name="customer_type"/>
+                <field name="price"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_cw_pricing_search" model="ir.ui.view">
+        <field name="name">otm.cw.pricing.search</field>
+        <field name="model">otm.cw.pricing</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="service_id"/>
+                <field name="vehicle_type_id"/>
+                <separator/>
+                <group>
+                    <filter name="group_service" string="Service" context="{'group_by': 'service_id'}"/>
+                    <filter name="group_vtype" string="Vehicle Type" context="{'group_by': 'vehicle_type_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="action_cw_pricing" model="ir.actions.act_window">
+        <field name="name">Pricing Matrix</field>
+        <field name="res_model">otm.cw.pricing</field>
+        <field name="view_mode">list</field>
+    </record>
+
+    <!-- Vehicles -->
+    <record id="view_cw_vehicle_list" model="ir.ui.view">
+        <field name="name">otm.cw.vehicle.list</field>
+        <field name="model">otm.cw.vehicle</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="reg_no"/>
+                <field name="vehicle_type_id"/>
+                <field name="brand"/>
+                <field name="model"/>
+                <field name="color"/>
+                <field name="partner_id"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_cw_vehicle_form" model="ir.ui.view">
+        <field name="name">otm.cw.vehicle.form</field>
+        <field name="model">otm.cw.vehicle</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group name="main">
+                        <group name="vehicle">
+                            <field name="reg_no"/>
+                            <field name="vehicle_type_id"/>
+                            <field name="brand"/>
+                            <field name="model"/>
+                            <field name="color"/>
+                        </group>
+                        <group name="owner">
+                            <field name="partner_id"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                    <field name="notes" placeholder="Notes"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_cw_vehicle" model="ir.actions.act_window">
+        <field name="name">Vehicles</field>
+        <field name="res_model">otm.cw.vehicle</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- Bays -->
+    <record id="view_cw_bay_list" model="ir.ui.view">
+        <field name="name">otm.cw.bay.list</field>
+        <field name="model">otm.cw.bay</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="number"/>
+                <field name="name"/>
+                <field name="state"/>
+                <field name="current_job_id"/>
+                <field name="staff_ids" widget="many2many_tags"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_cw_bay_form" model="ir.ui.view">
+        <field name="name">otm.cw.bay.form</field>
+        <field name="model">otm.cw.bay</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group name="main">
+                        <group name="bay">
+                            <field name="name"/>
+                            <field name="number"/>
+                            <field name="state"/>
+                            <field name="current_job_id" readonly="1"/>
+                            <field name="active"/>
+                        </group>
+                        <group name="rules">
+                            <field name="vehicle_type_ids" widget="many2many_tags"/>
+                            <field name="service_ids" widget="many2many_tags"/>
+                            <field name="staff_ids" widget="many2many_tags"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_cw_bay" model="ir.actions.act_window">
+        <field name="name">Bays</field>
+        <field name="res_model">otm.cw.bay</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- Packages -->
+    <record id="view_cw_package_form" model="ir.ui.view">
+        <field name="name">otm.cw.package.form</field>
+        <field name="model">otm.cw.package</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group name="main">
+                        <field name="name"/>
+                        <field name="price"/>
+                        <field name="validity_days"/>
+                        <field name="active"/>
+                    </group>
+                    <field name="line_ids">
+                        <list editable="bottom">
+                            <field name="service_id"/>
+                            <field name="qty"/>
+                        </list>
+                    </field>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="view_cw_package_list" model="ir.ui.view">
+        <field name="name">otm.cw.package.list</field>
+        <field name="model">otm.cw.package</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="price"/>
+                <field name="validity_days"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_cw_package" model="ir.actions.act_window">
+        <field name="name">Packages</field>
+        <field name="res_model">otm.cw.package</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>
