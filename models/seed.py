@@ -8,6 +8,7 @@ from odoo import api, fields, models, _
 from odoo.exceptions import UserError
 
 DEMO = "otm_carwash_demo"
+DEMO_PASSWORD = "Demo@12345"
 STAFF = ["Arun", "Rahul", "Vishnu", "Anil", "Sajeev", "Manoj", "Biju", "Nikhil", "Shibu", "Jose"]
 CUSTOMERS = ["Rahul Menon", "Anita Nair", "Faisal Khan", "Sreeja Pillai", "Joseph Mathew", "Divya Raj", "Nikhil Das",
              "Meera Iyer", "Suresh Kumar", "Priya Varma", "Thomas George", "Lakshmi S", "Ajmal Rahman", "Neha Joseph",
@@ -28,6 +29,30 @@ class OtmCwSeed(models.AbstractModel):
             "module": DEMO, "name": "%s_%s" % (rec._name.replace(".", "_"), key), "model": rec._name,
             "res_id": rec.id, "noupdate": True})
         return rec
+
+    def _demo_users(self, operator_emp, customer_partner):
+        """One login per role (password DEMO_PASSWORD). Tagged demo, removed by clear_demo()."""
+        env, Users = self.env, self.env["res.users"].sudo()
+        g = lambda x: env.ref(x).id
+        specs = [("manager", "Demo Manager", "otm_carwash.group_cw_manager"),
+                 ("reception", "Demo Reception", "otm_carwash.group_cw_reception"),
+                 ("operator", "Demo Operator", "otm_carwash.group_cw_operator"),
+                 ("customer", "Demo Customer", "base.group_portal")]
+        out = []
+        for key, name, grp in specs:
+            login = "%s@carwash.demo" % key
+            vals = {"name": name, "login": login, "email": login, "password": DEMO_PASSWORD,
+                    "group_ids": [(6, 0, [g(grp)])]}
+            if key == "customer" and customer_partner:
+                vals.update(partner_id=customer_partner.id)
+            user = Users.search([("login", "=", login)], limit=1) or Users.create(vals)
+            if key == "operator":
+                operator_emp.sudo().write({"user_id": user.id})
+            if key == "customer" and customer_partner:
+                customer_partner.sudo().write({"otm_cw_is_customer": True})
+            self._reg(user, key)
+            out.append(login)
+        return out
 
     @api.model
     def seed_demo(self):
@@ -111,7 +136,8 @@ class OtmCwSeed(models.AbstractModel):
             for pay in job.payment_ids:
                 pay.dt = job.end_dt + timedelta(minutes=8)
         bays.filtered(lambda b: b.number == 4).write({"state": "maintenance"})
-        return {"staff": len(staff), "customers": len(partners), "vehicles": len(vehicles), "jobs": len(jobs)}
+        users = self._demo_users(staff[0], partners[0])
+        return {"staff": len(staff), "customers": len(partners), "vehicles": len(vehicles), "jobs": len(jobs), "users": users}
 
     @api.model
     def clear_demo(self):
@@ -126,8 +152,12 @@ class OtmCwSeed(models.AbstractModel):
         jobs = self.env["otm.cw.job"].browse(job_ids).exists()
         jobs.mapped("bay_id").filtered(lambda b: b.current_job_id in jobs).write({"state": "available", "current_job_id": False})
         jobs.unlink()
-        for model in ("otm.cw.vehicle", "res.partner", "hr.employee"):
-            self.env[model].browse(ids.get(model, [])).exists().unlink()
+        self.env["otm.cw.vehicle"].browse(ids.get("otm.cw.vehicle", [])).exists().unlink()
+        self.env["hr.employee"].browse(ids.get("hr.employee", [])).exists().unlink()
+        users = self.env["res.users"].sudo().browse(ids.get("res.users", [])).exists()
+        users.write({"active": False})
+        users.unlink()
+        self.env["res.partner"].browse(ids.get("res.partner", [])).exists().unlink()
         data.unlink()
         self.env["otm.cw.bay"].search([("state", "=", "maintenance")]).write({"state": "available"})
         return True
